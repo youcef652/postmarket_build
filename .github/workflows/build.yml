@@ -1,0 +1,47 @@
+name: Build postmarketOS Image
+
+on:
+  workflow_dispatch: # يتيح لك تشغيل البناء يدوياً من واجهة GitHub
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y python3 git openssl qemu-user-static wget
+
+      - name: Setup pmbootstrap
+        run: |
+          git clone --depth=1 github.com
+          cd pmbootstrap
+          # إعداد مسبق للإعدادات لتجنب الأسئلة التفاعلية
+          ./pmbootstrap.py init \
+            --work /home/runner/work/pmbootstrap_work \
+            --arch armv7 \
+            --device samsung-j3xnlte \
+            --ui phosh \
+            --mirror mirror.postmarketos.org \
+            --version edge
+
+      - name: Build Rootfs
+        run: |
+          cd pmbootstrap
+          # بناء النظام (كلمة المرور الافتراضية ستكون 147147)
+          ./pmbootstrap.py install --password 147147
+
+      - name: Export Images
+        run: |
+          cd pmbootstrap
+          # تصدير الملفات إلى صيغة img
+          ./pmbootstrap.py export
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: postmarketOS-j3xnlte-image
+          path: /home/runner/work/pmbootstrap_work/chroot_native/home/pmos/rootfs/
