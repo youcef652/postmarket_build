@@ -1,47 +1,48 @@
-name: Build postmarketos Image
+name: Build postmarketOS Image
 
 on:
   workflow_dispatch:
 
 jobs:
   build:
+    # العودة إلى بيئة المضيف ubuntu-latest
     runs-on: ubuntu-latest
     
-    # استخدام صورة Docker تحتوي على pmbootstrap وجميع متطلبات Alpine Linux مسبقاً
-    container:
-      image: registry.gitlab.postmarketos.org/postmarketos/pmbootstrap:edge
-      options: --user root
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-        with:
-          path: pmos-repo
 
-      # خطوة إضافية لضمان استخدام خادم DNS عام داخل الكاش قبل البدء
-      - name: Configure DNS inside container
-        run: echo "nameserver 8.8.8.8" | tee /etc/resolv.conf
+      - name: Install Dependencies and Clone pmbootstrap
+        run: |
+          # تثبيت متطلبات Ubuntu أولاً
+          sudo apt update
+          sudo apt install -y python3 git openssl qemu-user-static wget abuild apk-tools
+          
+          # استنساخ pmbootstrap
+          git clone gitlab.postmarketos.org
 
       - name: Setup pmbootstrap Configuration and Build
         run: |
-          cd pmos-repo
-          pmbootstrap init \
-            --work /home/pmos/build_work \
+          cd pmbootstrap
+          # تهيئة الإعدادات على بيئة المضيف
+          ./pmbootstrap.py init \
+            --work /home/runner/work/pmbootstrap_work \
             --arch armv7 \
             --device samsung-j3xnlte \
             --ui sxmo \
             --version edge
           
-          # تصحيح التنسيق: يجب أن تكون عناوين URL كاملة
-          pmbootstrap config mirrors.alpine dl-cdn.alpinelinux.org
-          pmbootstrap config mirrors.pmaports mirror.postmarketos.org
+          # ضبط المرايا بشكل صريح
+          ./pmbootstrap.py config mirrors.alpine dl-cdn.alpinelinux.org
+          ./pmbootstrap.py config mirrors.pmaports mirror.postmarketos.org
 
-          pmbootstrap install --password 147147
-          pmbootstrap export
+          # بناء وتصدير النظام
+          ./pmbootstrap.py install --password 147147
+          ./pmbootstrap.py export
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: postmarketOS-j3xnlte-image
-          path: /home/pmos/build_work/chroot_native/home/pmos/rootfs/
+          path: /home/runner/work/pmbootstrap_work/chroot_native/home/pmos/rootfs/
           retention-days: 7
