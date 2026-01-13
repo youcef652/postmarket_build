@@ -1,10 +1,11 @@
 name: Build postmarketOS Image
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: # يتيح التشغيل اليدوي من واجهة GitHub
 
 jobs:
   build:
+    # يعمل على بيئة Ubuntu المضيفة لتجنب مشاكل شبكة Docker الداخلية
     runs-on: ubuntu-latest
     
     steps:
@@ -13,17 +14,17 @@ jobs:
 
       - name: Install Ubuntu Dependencies and Clone pmbootstrap
         run: |
-          # تثبيت متطلبات Ubuntu الأساسية فقط (بدون abuild/apk-tools)
+          # تثبيت متطلبات Ubuntu الأساسية فقط
           sudo apt update
           sudo apt install -y python3 python3-pip git openssl qemu-user-static wget curl
           
-          # استنساخ pmbootstrap - تأكد من أن هذا السطر مكتوب كاملاً وبشكل صحيح
+          # استنساخ pmbootstrap من GitLab الرسمي
           git clone gitlab.postmarketos.org
 
       - name: Setup pmbootstrap Configuration and Build
         run: |
           cd pmbootstrap
-          # تهيئة الإعدادات على بيئة المضيف
+          # تهيئة الإعدادات للجهاز المحدد (samsung-j3xnlte) والواجهة (sxmo)
           ./pmbootstrap.py init \
             --work /home/runner/work/pmbootstrap_work \
             --arch armv7 \
@@ -31,7 +32,7 @@ jobs:
             --ui sxmo \
             --version edge
           
-          # ضبط المرايا بشكل صريح
+          # ضبط عناوين المرايا بشكل صريح لتجنب الغموض
           ./pmbootstrap.py config mirrors.alpine dl-cdn.alpinelinux.org
           ./pmbootstrap.py config mirrors.pmaports mirror.postmarketos.org
 
@@ -43,7 +44,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: postmarketOS-j3xnlte-image
+          # المسار الذي ستجد فيه ملفات .img الناتجة
           path: /home/runner/work/pmbootstrap_work/chroot_native/home/pmos/rootfs/
-          retention-days: 7
+          retention-days: 7 # الاحتفاظ بالملفات لمدة 7 أيام
+
 
 
