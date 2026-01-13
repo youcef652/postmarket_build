@@ -1,11 +1,10 @@
 name: Build postmarketOS Image
 
 on:
-  workflow_dispatch: # يتيح التشغيل اليدوي من واجهة GitHub
+  workflow_dispatch:
 
 jobs:
   build:
-    # العودة إلى بيئة المضيف ubuntu-latest
     runs-on: ubuntu-latest
     
     steps:
@@ -18,7 +17,7 @@ jobs:
           sudo apt update
           sudo apt install -y python3 python3-pip git openssl qemu-user-static wget curl
           
-          # استنساخ pmbootstrap
+          # استنساخ pmbootstrap - تأكد من أن هذا السطر مكتوب كاملاً وبشكل صحيح
           git clone gitlab.postmarketos.org
 
       - name: Setup pmbootstrap Configuration and Build
@@ -46,4 +45,5 @@ jobs:
           name: postmarketOS-j3xnlte-image
           path: /home/runner/work/pmbootstrap_work/chroot_native/home/pmos/rootfs/
           retention-days: 7
+
 
