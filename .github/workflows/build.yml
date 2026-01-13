@@ -17,7 +17,7 @@ jobs:
 
       - name: Setup pmbootstrap
         run: |
-          git clone --depth=1 github.com
+          git clone https://gitlab.postmarketos.org/postmarketOS/pmbootstrap.git
           cd pmbootstrap
           # إعداد مسبق للإعدادات لتجنب الأسئلة التفاعلية
           ./pmbootstrap.py init \
