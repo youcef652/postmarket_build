@@ -6,51 +6,42 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    
+    # استخدام صورة Docker تحتوي على pmbootstrap وجميع متطلبات Alpine Linux مسبقاً
+    container:
+      image: registry.gitlab.postmarketos.org/postmarketos/pmbootstrap:edge
+      options: --user root
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        # بما أننا داخل كونتينر، نحتاج لتحديد مسار العمل
+        with:
+          path: pmos-repo
 
-      - name: Install Dependencies
+      - name: Setup pmbootstrap Configuration and Build
         run: |
-          sudo apt update
-          sudo apt install -y python3 git openssl qemu-user-static wget
-
-      - name: Clone pmbootstrap repository
-        run: |
-          # تم إصلاح الرابط ليستخدم GitLab الرسمي بدلاً من github.com
-          git clone gitlab.postmarketos.org
-
-      - name: Setup pmbootstrap Configuration
-        run: |
-          cd pmbootstrap
-          # تهيئة الإعدادات بدون خيارات --mirror الغامضة، وتحديد الجهاز والواجهة
-          ./pmbootstrap.py init \
-            --work /home/runner/work/pmbootstrap_work \
+          cd pmos-repo
+          # تهيئة الإعدادات (نحن نستخدم الأدوات المثبتة مسبقاً داخل الكاش)
+          pmbootstrap init \
+            --work /home/pmos/build_work \
             --arch armv7 \
             --device samsung-j3xnlte \
             --ui sxmo \
             --version edge
           
-          # ضبط المرايا بشكل صريح بعد التهيئة
-          ./pmbootstrap.py config mirrors.alpine dl-cdn.alpinelinux.org
-          ./pmbootstrap.py config mirrors.pmaports mirror.postmarketos.org
+          # ضبط المرايا بشكل صريح
+          pmbootstrap config mirrors.alpine dl-cdn.alpinelinux.org
+          pmbootstrap config mirrors.pmaports mirror.postmarketos.org
 
-      - name: Build Rootfs
-        run: |
-          cd pmbootstrap
-          # بناء النظام باستخدام كلمة مرور افتراضية
-          ./pmbootstrap.py install --password 147147
-
-      - name: Export Images
-        run: |
-          cd pmbootstrap
-          # تصدير الملفات إلى صيغة img
-          ./pmbootstrap.py export
+          # بناء وتصدير النظام في أمر واحد لتسريع العملية
+          pmbootstrap install --password 147147
+          pmbootstrap export
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: postmarketOS-j3xnlte-image
-          path: /home/runner/work/pmbootstrap_work/chroot_native/home/pmos/rootfs/
-          retention-days: 7 # الاحتفاظ بالملفات لمدة أسبوع
+          # المسار داخل الكاش الخاص بالكونتينر
+          path: /home/pmos/build_work/chroot_native/home/pmos/rootfs/
+          retention-days: 7
