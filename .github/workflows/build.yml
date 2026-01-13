@@ -1,11 +1,12 @@
 name: Build postmarketOS Image
 
 on:
-  workflow_dispatch: # يتيح لك تشغيل البناء يدوياً من واجهة GitHub
+  workflow_dispatch: # يتيح التشغيل اليدوي من واجهة GitHub
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -13,25 +14,33 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt update
-          sudo apt install -y python3 git openssl qemu-user-static wget
+          # تثبيت المتطلبات الأساسية
+          sudo apt install -y python3 git openssl qemu-user-static wget abuild apk-tools
 
-      - name: Setup pmbootstrap
+      - name: Clone pmbootstrap repository
         run: |
-          git clone https://gitlab.postmarketos.org/postmarketOS/pmbootstrap.git
+          # تم إصلاح الرابط ليستخدم GitLab الرسمي بدلاً من github.com
+          git clone gitlab.postmarketos.org
+
+      - name: Setup pmbootstrap Configuration
+        run: |
           cd pmbootstrap
-          # إعداد مسبق للإعدادات لتجنب الأسئلة التفاعلية
+          # تهيئة الإعدادات بدون خيارات --mirror الغامضة، وتحديد الجهاز والواجهة
           ./pmbootstrap.py init \
             --work /home/runner/work/pmbootstrap_work \
             --arch armv7 \
             --device samsung-j3xnlte \
-            --ui phosh \
-            --mirror mirror.postmarketos.org \
+            --ui sxmo \
             --version edge
+          
+          # ضبط المرايا بشكل صريح بعد التهيئة
+          ./pmbootstrap.py config mirrors.alpine dl-cdn.alpinelinux.org
+          ./pmbootstrap.py config mirrors.pmaports mirror.postmarketos.org
 
       - name: Build Rootfs
         run: |
           cd pmbootstrap
-          # بناء النظام (كلمة المرور الافتراضية ستكون 147147)
+          # بناء النظام باستخدام كلمة مرور افتراضية
           ./pmbootstrap.py install --password 147147
 
       - name: Export Images
@@ -45,3 +54,4 @@ jobs:
         with:
           name: postmarketOS-j3xnlte-image
           path: /home/runner/work/pmbootstrap_work/chroot_native/home/pmos/rootfs/
+          retention-days: 7 # الاحتفاظ بالملفات لمدة أسبوع
