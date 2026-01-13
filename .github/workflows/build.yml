@@ -14,8 +14,7 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt update
-          # تثبيت المتطلبات الأساسية
-          sudo apt install -y python3 git openssl qemu-user-static wget abuild apk-tools
+          sudo apt install -y python3 git openssl qemu-user-static wget
 
       - name: Clone pmbootstrap repository
         run: |
